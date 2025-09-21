@@ -188,9 +188,9 @@
     const unitH = cellRect.height;
     el.style.width = (cols * unitW) + 'px';
     el.style.height = (rows * unitH) + 'px';
-    // Align top-left of ghost with the top-left of the base cell, offset upward by TOUCH_POINT_OFFSET_Y
+    // Align top-left of ghost with the top-left of the base cell (hit-testing already uses the offset)
     el.style.left = (cellRect.left) + 'px';
-    el.style.top = (cellRect.top - TOUCH_POINT_OFFSET_Y) + 'px';
+    el.style.top = (cellRect.top) + 'px';
     el.style.display = 'grid';
     el.style.gridTemplateColumns = `repeat(${cols}, ${unitW}px)`;
     el.style.gridTemplateRows = `repeat(${rows}, ${unitH}px)`;
