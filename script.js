@@ -4,6 +4,8 @@
 (() => {
   const SIZE = 9;
 
+  const TOUCH_POINT_OFFSET_Y = 25; // px: vertical offset applied during touch drag for visibility
+
   function getPieceUnit() {
     try {
       if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return 28;
@@ -181,7 +183,7 @@
     el.style.height = (rows * unit) + 'px';
     // Center horizontally, offset upwards by 25px so finger doesn't obscure
     el.style.left = (clientX - (cols * unit) / 2) + 'px';
-    el.style.top = (clientY - (rows * unit) / 2 - 25) + 'px';
+    el.style.top = (clientY - (rows * unit) / 2 - TOUCH_POINT_OFFSET_Y) + 'px';
     el.style.display = 'grid';
     el.style.gridTemplateColumns = `repeat(${cols}, ${unit}px)`;
     el.style.gridTemplateRows = `repeat(${rows}, ${unit}px)`;
@@ -760,8 +762,8 @@
   }
 
   // Pointer-based drag helpers (mobile/touch)
-  function getCellAtPoint(clientX, clientY) {
-    const el = document.elementFromPoint(clientX, clientY);
+  function getCellAtPoint(clientX, clientY, offsetY = 0) {
+    const el = document.elementFromPoint(clientX, clientY - offsetY);
     if (!(el instanceof HTMLElement)) return null;
     const cellEl = el.closest('.cell');
     if (!cellEl) return null;
@@ -791,7 +793,7 @@
     if (!piece) return;
     if (ev.clientX == null || ev.clientY == null) return;
     renderPointerGhost(piece.shape, ev.clientX, ev.clientY);
-    const hit = getCellAtPoint(ev.clientX, ev.clientY);
+    const hit = getCellAtPoint(ev.clientX, ev.clientY, TOUCH_POINT_OFFSET_Y);
     if (!hit) { hideGhost(); clearHover(); return; }
     pointerHoverR = hit.r;
     pointerHoverC = hit.c;
