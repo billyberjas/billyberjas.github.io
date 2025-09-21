@@ -4,7 +4,7 @@
 (() => {
   const SIZE = 9;
 
-  const TOUCH_POINT_OFFSET_Y = 25; // px: vertical offset applied during touch drag for visibility
+  const TOUCH_POINT_OFFSET_Y = 50; // px: vertical offset applied during touch drag for visibility
 
   function getPieceUnit() {
     try {
