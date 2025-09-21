@@ -18,6 +18,7 @@
 
 html, body {
   height: 100%;
+  overflow: hidden; /* prevent page scroll on mobile Safari */
 }
 
 body {
@@ -126,6 +127,18 @@ body {
   background: rgba(240, 185, 11, 0.22);
   border-radius: 4px;
 }
+
+/* Pointer-following ghost (for touch) */
+.pointer-ghost {
+  z-index: 30;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+.pghost-block {
+  background: linear-gradient(180deg, #d4a373, #b07f59);
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px #7a4f2b;
+  opacity: 0.6;
+}
 .line-hint-block {
   outline: 2px solid var(--line-hint);
   background: rgba(58, 122, 58, 0.18); /* matches accent */
@@ -199,4 +212,15 @@ body {
   .tray-section {
     order: 2;
   }
+}
+
+/* Compact mobile layout to avoid scrolling (e.g., iPhone SE) */
+@media (max-width: 600px) {
+  .layout { padding: 8px; }
+  .topbar { padding: 8px 12px; }
+  .topbar h1 { font-size: 1rem; }
+  .scoreboard { font-size: 0.95rem; }
+  .tray-section h2 { display: none; }
+  .status { min-height: 18px; font-size: 0.9rem; }
+  .footer { display: none; }
 }

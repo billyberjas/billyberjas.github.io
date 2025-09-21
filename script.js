@@ -38,6 +38,7 @@
   let squareHintCells = [];
   let ghostEl = null; // overlay that shows a semi-transparent piece under the cursor
   let squareOverlayEl = null; // overlay above ghost to show 3x3 clear hints
+  let pointerGhostEl = null; // floating ghost near finger for touch
   // Pointer-based drag state for mobile/touch
   let pointerDragging = false;
   let pointerDragPieceId = null;
@@ -155,6 +156,46 @@
 
   function clearSquareOverlay() {
     if (squareOverlayEl) squareOverlayEl.innerHTML = '';
+  }
+
+  function ensurePointerGhostEl() {
+    if (pointerGhostEl && pointerGhostEl.parentElement) return pointerGhostEl;
+    pointerGhostEl = document.createElement('div');
+    pointerGhostEl.className = 'pointer-ghost';
+    pointerGhostEl.style.position = 'fixed';
+    pointerGhostEl.style.pointerEvents = 'none';
+    pointerGhostEl.style.top = '0px';
+    pointerGhostEl.style.left = '0px';
+    document.body.appendChild(pointerGhostEl);
+    return pointerGhostEl;
+  }
+  function hidePointerGhost() {
+    if (pointerGhostEl) pointerGhostEl.innerHTML = '';
+  }
+  function renderPointerGhost(shape, clientX, clientY) {
+    const el = ensurePointerGhostEl();
+    el.innerHTML = '';
+    const unit = getPieceUnit();
+    const { rows, cols } = getPieceBounds(shape);
+    el.style.width = (cols * unit) + 'px';
+    el.style.height = (rows * unit) + 'px';
+    // Center horizontally, offset upwards by 25px so finger doesn't obscure
+    el.style.left = (clientX - (cols * unit) / 2) + 'px';
+    el.style.top = (clientY - (rows * unit) / 2 - 25) + 'px';
+    el.style.display = 'grid';
+    el.style.gridTemplateColumns = `repeat(${cols}, ${unit}px)`;
+    el.style.gridTemplateRows = `repeat(${rows}, ${unit}px)`;
+    for (let rr = 0; rr < rows; rr++) {
+      for (let cc = 0; cc < cols; cc++) {
+        const has = shape.some(([r,c]) => r === rr && c === cc);
+        const d = document.createElement('div');
+        d.className = 'pghost-block';
+        d.style.width = unit + 'px';
+        d.style.height = unit + 'px';
+        if (!has) d.style.visibility = 'hidden';
+        el.appendChild(d);
+      }
+    }
   }
 
   function renderGhost(shape, baseR, baseC) {
@@ -738,6 +779,10 @@
     pointerHoverR = null;
     pointerHoverC = null;
     setStatus('Drag over a board cell and release to place.');
+    haptic('start');
+    if (ev.clientX != null && ev.clientY != null) {
+      renderPointerGhost(tray.find(p => p.id === pieceId)?.shape || [[0,0]], ev.clientX, ev.clientY);
+    }
   }
 
   function onPointerMove(ev) {
@@ -745,6 +790,7 @@
     const piece = tray.find(p => p.id === pointerDragPieceId);
     if (!piece) return;
     if (ev.clientX == null || ev.clientY == null) return;
+    renderPointerGhost(piece.shape, ev.clientX, ev.clientY);
     const hit = getCellAtPoint(ev.clientX, ev.clientY);
     if (!hit) { hideGhost(); clearHover(); return; }
     pointerHoverR = hit.r;
@@ -783,6 +829,7 @@
     pointerDragPieceId = null;
     pointerHoverR = pointerHoverC = null;
     hideGhost();
+    hidePointerGhost();
     clearHover();
   }
 
@@ -826,8 +873,37 @@
   });
   resetBtn.addEventListener('click', resetGame);
 
+  // Responsive fit: adjust cell size so layout fits within viewport without page scroll
+  function fitToViewport() {
+    const layoutEl = document.querySelector('.layout');
+    const topbarEl = document.querySelector('.topbar');
+    const footerEl = document.querySelector('.footer');
+    if (!layoutEl || !topbarEl) return;
+    const cs = getComputedStyle(layoutEl);
+    const layoutPad = parseInt(cs.paddingTop || '16') + parseInt(cs.paddingBottom || '16');
+    const gap = 2; // .board gap
+    const pad = 16; // layout side padding approximation used in width calc
+    const boardPad = 16; // .board padding 8*2
+    // Start from width-constrained cell size
+    const maxCellByW = Math.floor((window.innerWidth - pad - pad - boardPad - (SIZE - 1) * gap) / SIZE);
+    let cell = Math.min(Math.max(maxCellByW, 18), 42);
+    for (let i = 0; i < 20; i++) {
+      document.documentElement.style.setProperty('--cell-size', cell + 'px');
+      // Force reflow to get updated heights
+      const topH = topbarEl.offsetHeight;
+      const footH = footerEl ? footerEl.offsetHeight : 0;
+      const totalH = topH + layoutEl.scrollHeight + footH;
+      if (totalH <= window.innerHeight) break;
+      cell -= 1;
+      if (cell < 18) break;
+    }
+  }
+
+  window.addEventListener('resize', fitToViewport);
+
   // Initial render
   renderBoard();
   generateTray();
+  fitToViewport();
   setStatus('Drag a piece onto a board cell, or click a piece then move over a cell to preview and click to place.');
 })();
