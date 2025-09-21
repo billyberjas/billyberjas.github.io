@@ -168,8 +168,6 @@
     pointerGhostEl.style.pointerEvents = 'none';
     pointerGhostEl.style.top = '0px';
     pointerGhostEl.style.left = '0px';
-    pointerGhostEl.style.width = '100%';
-    pointerGhostEl.style.height = '100%';
     document.body.appendChild(pointerGhostEl);
     return pointerGhostEl;
   }
@@ -177,25 +175,35 @@
     if (pointerGhostEl) pointerGhostEl.innerHTML = '';
   }
   function renderPointerGhostAtCell(shape, baseR, baseC) {
-    const overlay = ensurePointerGhostEl();
-    overlay.innerHTML = '';
-    // Render each block aligned to the actual board cell rects, in viewport coords
-    for (const [dr, dc] of shape) {
-      const r = baseR + dr;
-      const c = baseC + dc;
-      if (r < 0 || r >= SIZE || c < 0 || c >= SIZE) continue;
-      const idx = r * SIZE + c;
-      const cell = boardEl.children[idx];
-      if (!(cell instanceof HTMLElement)) continue;
-      const rect = cell.getBoundingClientRect();
-      const block = document.createElement('div');
-      block.className = 'pghost-block';
-      block.style.position = 'absolute';
-      block.style.left = rect.left + 'px';
-      block.style.top = rect.top + 'px';
-      block.style.width = rect.width + 'px';
-      block.style.height = rect.height + 'px';
-      overlay.appendChild(block);
+    const el = ensurePointerGhostEl();
+    el.innerHTML = '';
+    // Base cell rect drives exact sizing to match board
+    const baseIdx = baseR * SIZE + baseC;
+    const baseCell = boardEl.children[baseIdx];
+    if (!(baseCell instanceof HTMLElement)) return;
+    const cellRect = baseCell.getBoundingClientRect();
+    const boardRect = boardEl.getBoundingClientRect();
+    const { rows, cols } = getPieceBounds(shape);
+    const unitW = cellRect.width;
+    const unitH = cellRect.height;
+    el.style.width = (cols * unitW) + 'px';
+    el.style.height = (rows * unitH) + 'px';
+    // Align top-left of ghost with the top-left of the base cell (hit-testing already uses the offset)
+    el.style.left = (cellRect.left) + 'px';
+    el.style.top = (cellRect.top) + 'px';
+    el.style.display = 'grid';
+    el.style.gridTemplateColumns = `repeat(${cols}, ${unitW}px)`;
+    el.style.gridTemplateRows = `repeat(${rows}, ${unitH}px)`;
+    for (let rr = 0; rr < rows; rr++) {
+      for (let cc = 0; cc < cols; cc++) {
+        const has = shape.some(([r,c]) => r === rr && c === cc);
+        const d = document.createElement('div');
+        d.className = 'pghost-block';
+        d.style.width = unitW + 'px';
+        d.style.height = unitH + 'px';
+        if (!has) d.style.visibility = 'hidden';
+        el.appendChild(d);
+      }
     }
   }
 

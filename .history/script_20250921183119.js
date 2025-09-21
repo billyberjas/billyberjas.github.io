@@ -9,7 +9,7 @@
   function getPieceUnit() {
     try {
       if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return 28;
-    } catch (_) {}
+    } catch (_) { }
     return 20;
   }
 
@@ -22,7 +22,7 @@
         case 'error': navigator.vibrate([20, 30, 20]); break;
         case 'select': navigator.vibrate(6); break;
       }
-    } catch (_) {}
+    } catch (_) { }
   }
 
   const boardEl = document.getElementById('board');
@@ -50,33 +50,33 @@
   // Shapes are arrays of [r, c] with origin at (0,0)
   const SHAPES = [
     // Singles and lines
-    [[0,0]],
-    [[0,0],[0,1]],
-    [[0,0],[1,0]],
-    [[0,0],[0,1],[0,2]],
-    [[0,0],[1,0],[2,0]],
-    [[0,0],[0,1],[0,2],[0,3]],
-    [[0,0],[1,0],[2,0],[3,0]],
-    [[0,0],[0,1],[0,2],[0,3],[0,4]],
-    [[0,0],[1,0],[2,0],[3,0],[4,0]],
+    [[0, 0]],
+    [[0, 0], [0, 1]],
+    [[0, 0], [1, 0]],
+    [[0, 0], [0, 1], [0, 2]],
+    [[0, 0], [1, 0], [2, 0]],
+    [[0, 0], [0, 1], [0, 2], [0, 3]],
+    [[0, 0], [1, 0], [2, 0], [3, 0]],
+    [[0, 0], [0, 1], [0, 2], [0, 3], [0, 4]],
+    [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0]],
 
     // Squares
-    [[0,0],[0,1],[1,0],[1,1]],
-    [[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[2,0],[2,1],[2,2]], // 3x3
+    [[0, 0], [0, 1], [1, 0], [1, 1]],
+    //[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[2,0],[2,1],[2,2]], // 3x3
 
     // L shapes (4 blocks)
-    [[0,0],[1,0],[2,0],[2,1]],
-    [[0,1],[1,1],[2,1],[2,0]],
-    [[0,0],[0,1],[1,0],[2,0]],
-    [[0,0],[0,1],[1,1],[2,1]],
+    [[0, 0], [1, 0], [2, 0], [2, 1]],
+    [[0, 1], [1, 1], [2, 1], [2, 0]],
+    [[0, 0], [0, 1], [1, 0], [2, 0]],
+    [[0, 0], [0, 1], [1, 1], [2, 1]],
 
     // T shapes
-    [[0,0],[0,1],[0,2],[1,1]],
-    [[0,1],[1,0],[1,1],[2,1]],
+    [[0, 0], [0, 1], [0, 2], [1, 1]],
+    [[0, 1], [1, 0], [1, 1], [2, 1]],
 
     // Z/S small
-    [[0,0],[0,1],[1,1],[1,2]],
-    [[0,1],[0,2],[1,0],[1,1]],
+    [[0, 0], [0, 1], [1, 1], [1, 2]],
+    [[0, 1], [0, 2], [1, 0], [1, 1]],
   ];
 
   function createEmptyBoard() {
@@ -168,8 +168,6 @@
     pointerGhostEl.style.pointerEvents = 'none';
     pointerGhostEl.style.top = '0px';
     pointerGhostEl.style.left = '0px';
-    pointerGhostEl.style.width = '100%';
-    pointerGhostEl.style.height = '100%';
     document.body.appendChild(pointerGhostEl);
     return pointerGhostEl;
   }
@@ -177,25 +175,35 @@
     if (pointerGhostEl) pointerGhostEl.innerHTML = '';
   }
   function renderPointerGhostAtCell(shape, baseR, baseC) {
-    const overlay = ensurePointerGhostEl();
-    overlay.innerHTML = '';
-    // Render each block aligned to the actual board cell rects, in viewport coords
-    for (const [dr, dc] of shape) {
-      const r = baseR + dr;
-      const c = baseC + dc;
-      if (r < 0 || r >= SIZE || c < 0 || c >= SIZE) continue;
-      const idx = r * SIZE + c;
-      const cell = boardEl.children[idx];
-      if (!(cell instanceof HTMLElement)) continue;
-      const rect = cell.getBoundingClientRect();
-      const block = document.createElement('div');
-      block.className = 'pghost-block';
-      block.style.position = 'absolute';
-      block.style.left = rect.left + 'px';
-      block.style.top = rect.top + 'px';
-      block.style.width = rect.width + 'px';
-      block.style.height = rect.height + 'px';
-      overlay.appendChild(block);
+    const el = ensurePointerGhostEl();
+    el.innerHTML = '';
+    // Base cell rect drives exact sizing to match board
+    const baseIdx = baseR * SIZE + baseC;
+    const baseCell = boardEl.children[baseIdx];
+    if (!(baseCell instanceof HTMLElement)) return;
+    const cellRect = baseCell.getBoundingClientRect();
+    const boardRect = boardEl.getBoundingClientRect();
+    const { rows, cols } = getPieceBounds(shape);
+    const unitW = cellRect.width;
+    const unitH = cellRect.height;
+    el.style.width = (cols * unitW) + 'px';
+    el.style.height = (rows * unitH) + 'px';
+    // Align top-left of ghost with the top-left of the base cell (hit-testing already uses the offset)
+    el.style.left = (cellRect.left) + 'px';
+    el.style.top = (cellRect.top) + 'px';
+    el.style.display = 'grid';
+    el.style.gridTemplateColumns = `repeat(${cols}, ${unitW}px)`;
+    el.style.gridTemplateRows = `repeat(${rows}, ${unitH}px)`;
+    for (let rr = 0; rr < rows; rr++) {
+      for (let cc = 0; cc < cols; cc++) {
+        const has = shape.some(([r, c]) => r === rr && c === cc);
+        const d = document.createElement('div');
+        d.className = 'pghost-block';
+        d.style.width = unitW + 'px';
+        d.style.height = unitH + 'px';
+        if (!has) d.style.visibility = 'hidden';
+        el.appendChild(d);
+      }
     }
   }
 
@@ -351,7 +359,7 @@
 
   function getPieceBounds(shape) {
     let maxR = 0, maxC = 0;
-    for (const [r,c] of shape) { if (r > maxR) maxR = r; if (c > maxC) maxC = c; }
+    for (const [r, c] of shape) { if (r > maxR) maxR = r; if (c > maxC) maxC = c; }
     return { rows: maxR + 1, cols: maxC + 1 };
   }
 
@@ -386,7 +394,7 @@
             dragImg.style.gridTemplateRows = `repeat(${rows}, ${unit}px)`;
             for (let rr = 0; rr < rows; rr++) {
               for (let cc = 0; cc < cols; cc++) {
-                const has = piece.shape.some(([r,c]) => r === rr && c === cc);
+                const has = piece.shape.some(([r, c]) => r === rr && c === cc);
                 const d = document.createElement('div');
                 d.style.width = unit + 'px';
                 d.style.height = unit + 'px';
@@ -404,7 +412,7 @@
             dt.setDragImage(dragImg, 10, 10);
             // Cleanup after a tick
             setTimeout(() => dragImg.remove(), 0);
-          } catch {}
+          } catch { }
         }
         selectedPieceId = piece.id;
         hideGhost();
@@ -438,7 +446,7 @@
 
       // Build mini grid
       const grid = Array.from({ length: rows }, () => Array(cols).fill(0));
-      for (const [r,c] of piece.shape) grid[r][c] = 1;
+      for (const [r, c] of piece.shape) grid[r][c] = 1;
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           if (grid[r][c]) {
