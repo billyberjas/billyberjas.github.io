@@ -174,26 +174,33 @@
   function hidePointerGhost() {
     if (pointerGhostEl) pointerGhostEl.innerHTML = '';
   }
-  function renderPointerGhost(shape, clientX, clientY) {
+  function renderPointerGhostAtCell(shape, baseR, baseC) {
     const el = ensurePointerGhostEl();
     el.innerHTML = '';
-    const unit = getPieceUnit();
+    // Base cell rect drives exact sizing to match board
+    const baseIdx = baseR * SIZE + baseC;
+    const baseCell = boardEl.children[baseIdx];
+    if (!(baseCell instanceof HTMLElement)) return;
+    const cellRect = baseCell.getBoundingClientRect();
+    const boardRect = boardEl.getBoundingClientRect();
     const { rows, cols } = getPieceBounds(shape);
-    el.style.width = (cols * unit) + 'px';
-    el.style.height = (rows * unit) + 'px';
-    // Center horizontally, offset upwards by 25px so finger doesn't obscure
-    el.style.left = (clientX - (cols * unit) / 2) + 'px';
-    el.style.top = (clientY - (rows * unit) / 2 - TOUCH_POINT_OFFSET_Y) + 'px';
+    const unitW = cellRect.width;
+    const unitH = cellRect.height;
+    el.style.width = (cols * unitW) + 'px';
+    el.style.height = (rows * unitH) + 'px';
+    // Align top-left of ghost with the top-left of the base cell, offset upward by TOUCH_POINT_OFFSET_Y
+    el.style.left = (cellRect.left) + 'px';
+    el.style.top = (cellRect.top - TOUCH_POINT_OFFSET_Y) + 'px';
     el.style.display = 'grid';
-    el.style.gridTemplateColumns = `repeat(${cols}, ${unit}px)`;
-    el.style.gridTemplateRows = `repeat(${rows}, ${unit}px)`;
+    el.style.gridTemplateColumns = `repeat(${cols}, ${unitW}px)`;
+    el.style.gridTemplateRows = `repeat(${rows}, ${unitH}px)`;
     for (let rr = 0; rr < rows; rr++) {
       for (let cc = 0; cc < cols; cc++) {
         const has = shape.some(([r,c]) => r === rr && c === cc);
         const d = document.createElement('div');
         d.className = 'pghost-block';
-        d.style.width = unit + 'px';
-        d.style.height = unit + 'px';
+        d.style.width = unitW + 'px';
+        d.style.height = unitH + 'px';
         if (!has) d.style.visibility = 'hidden';
         el.appendChild(d);
       }
@@ -782,9 +789,7 @@
     pointerHoverC = null;
     setStatus('Drag over a board cell and release to place.');
     haptic('start');
-    if (ev.clientX != null && ev.clientY != null) {
-      renderPointerGhost(tray.find(p => p.id === pieceId)?.shape || [[0,0]], ev.clientX, ev.clientY);
-    }
+    // First preview will appear on pointermove when we know the hovered cell
   }
 
   function onPointerMove(ev) {
@@ -792,13 +797,13 @@
     const piece = tray.find(p => p.id === pointerDragPieceId);
     if (!piece) return;
     if (ev.clientX == null || ev.clientY == null) return;
-    renderPointerGhost(piece.shape, ev.clientX, ev.clientY);
     const hit = getCellAtPoint(ev.clientX, ev.clientY, TOUCH_POINT_OFFSET_Y);
     if (!hit) { hideGhost(); clearHover(); return; }
     pointerHoverR = hit.r;
     pointerHoverC = hit.c;
     renderGhost(piece.shape, hit.r, hit.c);
     highlightPlacement(piece.shape, hit.r, hit.c);
+    renderPointerGhostAtCell(piece.shape, hit.r, hit.c);
   }
 
   function onPointerUp(ev) {
