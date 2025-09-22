@@ -111,6 +111,10 @@
         cell.dataset.col = String(c);
         cell.role = 'gridcell';
         cell.setAttribute('draggable', 'false');
+        // Alternate 3x3 subgrid shading like Woodoku
+        if (((Math.floor(r / 3) + Math.floor(c / 3)) % 2) === 1) {
+          cell.classList.add('subgrid-alt');
+        }
         boardEl.appendChild(cell);
       }
     }
