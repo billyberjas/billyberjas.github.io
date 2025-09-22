@@ -8,7 +8,7 @@
   --danger: #b23a3a;
   --square-hint: #f0b90b;
   --line-hint: #3a7a3a; /* same as accent by default */
-  --subgrid-alt-bg: #ffd8b0;
+  --subgrid-alt-bg: #ffc58a; /* stronger base tint */
   --text: #2b2b2b;
   --cell-size: 38px;
 }
@@ -95,11 +95,27 @@ body {
   background: #fff8f0;
   border-radius: 4px;
   box-shadow: inset 0 0 0 1px var(--grid);
+  position: relative; /* allow subgrid overlay pseudo-element */
 }
 
 /* Alternate background for 3x3 subgrids (only visible on empty cells) */
 .cell.subgrid-alt:not(.filled) {
-  background: var(--subgrid-alt-bg);
+  background-color: var(--subgrid-alt-bg);
+}
+.cell.subgrid-alt:not(.filled)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 160, 64, 0.32); /* strong visible tint overlay */
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+/* Increase tint on coarse pointers (mobile Safari/Chrome) */
+@media (pointer: coarse) {
+  .cell.subgrid-alt:not(.filled)::before {
+    background: rgba(255, 160, 64, 0.42);
+  }
 }
 
 /* Hover preview for drag-and-drop */
