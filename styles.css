@@ -87,6 +87,7 @@ body {
   box-shadow: inset 0 0 0 2px var(--wood-dark);
   position: relative; /* allow ghost overlay positioning */
   touch-action: none; /* prevent touch scroll during drag */
+  will-change: transform; /* smoother pulse animations */
 }
 
 .cell {
@@ -161,6 +162,21 @@ body {
   box-shadow: inset 0 0 0 1px #7a4f2b;
   opacity: 0.6;
 }
+
+/* Pulse animations (visual haptics) */
+@keyframes pulse-once {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+@keyframes pulse-double {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.035); }
+  65% { transform: scale(1.01); }
+  100% { transform: scale(1); }
+}
+.board.pulse-start { animation: pulse-once 140ms ease-out; }
+.board.pulse-success { animation: pulse-double 200ms ease-out; }
+.board.pulse-error { animation: pulse-once 160ms ease-in-out; }
 .line-hint-block {
   outline: 2px solid var(--line-hint);
   background: rgba(58, 122, 58, 0.18); /* matches accent */

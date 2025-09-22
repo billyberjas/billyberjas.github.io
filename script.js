@@ -12,14 +12,40 @@
     return 20;
   }
 
+  function triggerPulse(kind) {
+    const map = {
+      start: 'pulse-start',
+      success: 'pulse-success',
+      error: 'pulse-error',
+      select: 'pulse-start',
+    };
+    const cls = map[kind] || 'pulse-start';
+    // Remove any existing pulse classes to restart animation
+    boardEl.classList.remove('pulse-start', 'pulse-success', 'pulse-error');
+    // Force reflow to allow restarting same animation class
+    void boardEl.offsetWidth;
+    boardEl.classList.add(cls);
+    const cleanup = () => {
+      boardEl.classList.remove(cls);
+      boardEl.removeEventListener('animationend', cleanup);
+    };
+    boardEl.addEventListener('animationend', cleanup, { once: true });
+    // Fallback cleanup just in case
+    setTimeout(() => boardEl.classList.remove(cls), 400);
+  }
+
   function haptic(kind) {
     try {
-      if (!('vibrate' in navigator)) return;
-      switch (kind) {
-        case 'start': navigator.vibrate(8); break;
-        case 'success': navigator.vibrate([12, 40, 12]); break;
-        case 'error': navigator.vibrate([20, 30, 20]); break;
-        case 'select': navigator.vibrate(6); break;
+      // Always do visual pulse
+      triggerPulse(kind);
+      // Vibrate when available (not on iOS)
+      if ('vibrate' in navigator) {
+        switch (kind) {
+          case 'start': navigator.vibrate(8); break;
+          case 'success': navigator.vibrate([12, 40, 12]); break;
+          case 'error': navigator.vibrate([20, 30, 20]); break;
+          case 'select': navigator.vibrate(6); break;
+        }
       }
     } catch (_) {}
   }
