@@ -4,7 +4,6 @@
 (() => {
   const SIZE = 9;
 
-  const TOUCH_POINT_OFFSET_Y = 75; // px: vertical offset applied during touch drag for visibility
 
   function getPieceUnit() {
     try {
@@ -25,12 +24,23 @@
     } catch (_) {}
   }
 
+  function getBoardCellSizePx() {
+    const anyCell = boardEl.querySelector('.cell');
+    if (anyCell instanceof HTMLElement) {
+      const rect = anyCell.getBoundingClientRect();
+      if (rect && rect.height) return rect.height;
+    }
+    const css = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-size'));
+    return Number.isFinite(css) && css > 0 ? css : 38;
+  }
+
   function getTouchOffsetYForShape(shape) {
     const { rows } = getPieceBounds(shape);
-    if (rows >= 4) return 110;
-    if (rows === 3) return 90;
-    if (rows === 2) return TOUCH_POINT_OFFSET_Y; // default configured base for 2-high pieces
-    return TOUCH_POINT_OFFSET_Y; // fallback for other sizes
+    const h = getBoardCellSizePx();
+    if (rows >= 4) return 5 * h;   // 4 blocks high -> 5x block height
+    if (rows === 3) return 4 * h;  // 3 blocks high -> 4x block height
+    if (rows === 2) return 3 * h;  // 2 blocks high -> 3x block height
+    return 2 * h;                  // 1 block high (or others) -> 2x block height
   }
 
   const boardEl = document.getElementById('board');
