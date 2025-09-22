@@ -25,6 +25,14 @@
     } catch (_) {}
   }
 
+  function getTouchOffsetYForShape(shape) {
+    const { rows } = getPieceBounds(shape);
+    if (rows >= 4) return 110;
+    if (rows === 3) return 90;
+    if (rows === 2) return TOUCH_POINT_OFFSET_Y; // default configured base for 2-high pieces
+    return TOUCH_POINT_OFFSET_Y; // fallback for other sizes
+  }
+
   const boardEl = document.getElementById('board');
   const trayEl = document.getElementById('tray');
   const scoreEl = document.getElementById('score');
@@ -789,7 +797,8 @@
     const piece = tray.find(p => p.id === pointerDragPieceId);
     if (!piece) return;
     if (ev.clientX == null || ev.clientY == null) return;
-    const hit = getCellAtPoint(ev.clientX, ev.clientY, TOUCH_POINT_OFFSET_Y);
+    const offsetY = getTouchOffsetYForShape(piece.shape);
+    const hit = getCellAtPoint(ev.clientX, ev.clientY, offsetY);
     if (!hit) { hideGhost(); clearHover(); return; }
     pointerHoverR = hit.r;
     pointerHoverC = hit.c;
