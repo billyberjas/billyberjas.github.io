@@ -902,7 +902,6 @@
     const footerEl = document.querySelector('.footer');
     if (!layoutEl || !topbarEl) return;
     const cs = getComputedStyle(layoutEl);
-    const layoutPad = parseInt(cs.paddingTop || '16') + parseInt(cs.paddingBottom || '16');
     const gap = 2; // .board gap
     const pad = 16; // layout side padding approximation used in width calc
     const boardPad = 16; // .board padding 8*2
@@ -914,8 +913,10 @@
       // Force reflow to get updated heights
       const topH = topbarEl.offsetHeight;
       const footH = footerEl ? footerEl.offsetHeight : 0;
-      const totalH = topH + layoutEl.scrollHeight + footH;
-      if (totalH <= window.innerHeight) break;
+      const contentH = layoutEl.offsetHeight; // more stable than scrollHeight for Safari
+      const allowance = 6; // small tolerance to avoid over-shrinking due to rounding
+      const totalH = topH + contentH + footH;
+      if (totalH <= window.innerHeight - allowance) break;
       cell -= 1;
       if (cell < 18) break;
     }
