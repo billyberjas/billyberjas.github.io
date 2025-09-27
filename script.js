@@ -8,46 +8,20 @@
   function getPieceUnit() {
     try {
       if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return 28;
-    } catch (_) {}
+    } catch (_) { }
     return 20;
-  }
-
-  function triggerPulse(kind) {
-    const map = {
-      start: 'pulse-start',
-      success: 'pulse-success',
-      error: 'pulse-error',
-      select: 'pulse-start',
-    };
-    const cls = map[kind] || 'pulse-start';
-    // Remove any existing pulse classes to restart animation
-    boardEl.classList.remove('pulse-start', 'pulse-success', 'pulse-error');
-    // Force reflow to allow restarting same animation class
-    void boardEl.offsetWidth;
-    boardEl.classList.add(cls);
-    const cleanup = () => {
-      boardEl.classList.remove(cls);
-      boardEl.removeEventListener('animationend', cleanup);
-    };
-    boardEl.addEventListener('animationend', cleanup, { once: true });
-    // Fallback cleanup just in case
-    setTimeout(() => boardEl.classList.remove(cls), 400);
   }
 
   function haptic(kind) {
     try {
-      // Always do visual pulse
-      triggerPulse(kind);
-      // Vibrate when available (not on iOS)
-      if ('vibrate' in navigator) {
-        switch (kind) {
-          case 'start': navigator.vibrate(8); break;
-          case 'success': navigator.vibrate([12, 40, 12]); break;
-          case 'error': navigator.vibrate([20, 30, 20]); break;
-          case 'select': navigator.vibrate(6); break;
-        }
+      if (!('vibrate' in navigator)) return;
+      switch (kind) {
+        case 'start': navigator.vibrate(8); break;
+        case 'success': navigator.vibrate([12, 40, 12]); break;
+        case 'error': navigator.vibrate([20, 30, 20]); break;
+        case 'select': navigator.vibrate(6); break;
       }
-    } catch (_) {}
+    } catch (_) { }
   }
 
   function getBoardCellSizePx() {
@@ -94,33 +68,41 @@
   // Shapes are arrays of [r, c] with origin at (0,0)
   const SHAPES = [
     // Singles and lines
-    [[0,0]],
-    [[0,0],[0,1]],
-    [[0,0],[1,0]],
-    [[0,0],[0,1],[0,2]],
-    [[0,0],[1,0],[2,0]],
-    [[0,0],[0,1],[0,2],[0,3]],
-    [[0,0],[1,0],[2,0],[3,0]],
-    [[0,0],[0,1],[0,2],[0,3],[0,4]],
-    [[0,0],[1,0],[2,0],[3,0],[4,0]],
+
+    [[0, 0]],
+    [[0, 0], [0, 1]],
+    [[0, 0], [1, 0]],
+    [[0, 0], [0, 1], [0, 2]],
+    [[0, 0], [1, 0], [2, 0]],
+    [[0, 0], [0, 1], [0, 2], [0, 3]],
+    [[0, 0], [1, 0], [2, 0], [3, 0]],
+    [[0, 0], [0, 1], [0, 2], [0, 3], [0, 4]],
+    [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0]],
 
     // Squares
-    [[0,0],[0,1],[1,0],[1,1]],
-    [[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[2,0],[2,1],[2,2]], // 3x3
+    [[0, 0], [0, 1], [1, 0], [1, 1]],
+    //[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[2,0],[2,1],[2,2]], // 3x3
 
     // L shapes (4 blocks)
-    [[0,0],[1,0],[2,0],[2,1]],
-    [[0,1],[1,1],[2,1],[2,0]],
-    [[0,0],[0,1],[1,0],[2,0]],
-    [[0,0],[0,1],[1,1],[2,1]],
+    [[0, 0], [1, 0], [2, 0], [2, 1]],
+    [[0, 1], [1, 1], [2, 1], [2, 0]],
+    [[0, 0], [0, 1], [1, 0], [2, 0]],
+    [[0, 0], [0, 1], [1, 1], [2, 1]],
 
     // T shapes
-    [[0,0],[0,1],[0,2],[1,1]],
-    [[0,1],[1,0],[1,1],[2,1]],
+    [[0, 0], [0, 1], [0, 2], [1, 1]],
+    [[0, 1], [1, 0], [1, 1], [2, 1]],
 
     // Z/S small
-    [[0,0],[0,1],[1,1],[1,2]],
-    [[0,1],[0,2],[1,0],[1,1]],
+    [[0, 0], [0, 1], [1, 1], [1, 2]],
+    [[0, 1], [0, 2], [1, 0], [1, 1]],
+
+    //la L pequeña
+    [[0, 0], [1, 0], [1, 1]],
+    [[0, 1], [1, 0], [1, 1]],
+    [[0, 0], [0, 1], [1, 0]],
+    [[0, 0], [0, 1], [1, 1]],
+
   ];
 
   function createEmptyBoard() {
@@ -399,7 +381,7 @@
 
   function getPieceBounds(shape) {
     let maxR = 0, maxC = 0;
-    for (const [r,c] of shape) { if (r > maxR) maxR = r; if (c > maxC) maxC = c; }
+    for (const [r, c] of shape) { if (r > maxR) maxR = r; if (c > maxC) maxC = c; }
     return { rows: maxR + 1, cols: maxC + 1 };
   }
 
@@ -434,7 +416,7 @@
             dragImg.style.gridTemplateRows = `repeat(${rows}, ${unit}px)`;
             for (let rr = 0; rr < rows; rr++) {
               for (let cc = 0; cc < cols; cc++) {
-                const has = piece.shape.some(([r,c]) => r === rr && c === cc);
+                const has = piece.shape.some(([r, c]) => r === rr && c === cc);
                 const d = document.createElement('div');
                 d.style.width = unit + 'px';
                 d.style.height = unit + 'px';
@@ -452,7 +434,7 @@
             dt.setDragImage(dragImg, 10, 10);
             // Cleanup after a tick
             setTimeout(() => dragImg.remove(), 0);
-          } catch {}
+          } catch { }
         }
         selectedPieceId = piece.id;
         hideGhost();
@@ -486,7 +468,7 @@
 
       // Build mini grid
       const grid = Array.from({ length: rows }, () => Array(cols).fill(0));
-      for (const [r,c] of piece.shape) grid[r][c] = 1;
+      for (const [r, c] of piece.shape) grid[r][c] = 1;
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           if (grid[r][c]) {
@@ -921,6 +903,83 @@
   });
   resetBtn.addEventListener('click', resetGame);
 
+  // Procedural wood texture generation
+  function seededRandom(seed) {
+    let x = Math.sin(seed) * 10000;
+    return () => { x = Math.sin(x) * 10000; return x - Math.floor(x); };
+  }
+  function makeNoiseGrid(n, rand) {
+    const g = new Float32Array(n * n);
+    for (let i = 0; i < g.length; i++) g[i] = rand();
+    return { n, g };
+  }
+  function sampleGrid(grid, x, y) {
+    const n = grid.n;
+    const gx = Math.floor(x) % n; const gy = Math.floor(y) % n;
+    const fx = x - Math.floor(x); const fy = y - Math.floor(y);
+    const x1 = (gx + 1) % n; const y1 = (gy + 1) % n;
+    const v00 = grid.g[gy * n + gx];
+    const v10 = grid.g[gy * n + x1];
+    const v01 = grid.g[y1 * n + gx];
+    const v11 = grid.g[y1 * n + x1];
+    const i1 = v00 + (v10 - v00) * fx;
+    const i2 = v01 + (v11 - v01) * fx;
+    return i1 + (i2 - i1) * fy;
+  }
+  function turbulence(grid, x, y, octaves = 4, freq = 1.5) {
+    let amp = 1, f = freq, sum = 0, norm = 0;
+    for (let i = 0; i < octaves; i++) {
+      sum += Math.abs(sampleGrid(grid, x * f, y * f) - 0.5) * amp;
+      norm += amp; amp *= 0.5; f *= 2;
+    }
+    return sum / norm;
+  }
+  function generateWoodTexture(size = 512, seed = 1337, opts = {}) {
+    const {
+      ringDensity = 10.5,
+      ringIntensity = 0.7,
+      grainAngleDeg = 12,
+      baseColor = [210, 160, 110],
+      darkColor = [150, 100, 70],
+    } = opts;
+    const rand = seededRandom(seed);
+    const grid = makeNoiseGrid(128, rand);
+    const cnv = document.createElement('canvas');
+    cnv.width = size; cnv.height = size;
+    const ctx = cnv.getContext('2d', { willReadFrequently: false });
+    const img = ctx.createImageData(size, size);
+    const ang = grainAngleDeg * Math.PI / 180;
+    const dirx = Math.cos(ang), diry = Math.sin(ang);
+    for (let y = 0, i = 0; y < size; y++) {
+      for (let x = 0; x < size; x++, i += 4) {
+        const nx = x / size, ny = y / size;
+        const coord = nx * dirx + ny * diry;
+        const turb = turbulence(grid, nx, ny, 4, 1.25);
+        const rings = Math.sin((coord * ringDensity + turb * 1.8) * Math.PI * 2);
+        const t = (rings * 0.5 + 0.5) ** (1 / ringIntensity);
+        const r = Math.round(baseColor[0] * t + darkColor[0] * (1 - t));
+        const g = Math.round(baseColor[1] * t + darkColor[1] * (1 - t));
+        const b = Math.round(baseColor[2] * t + darkColor[2] * (1 - t));
+        img.data[i] = r; img.data[i + 1] = g; img.data[i + 2] = b; img.data[i + 3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    return cnv.toDataURL('image/webp');
+  }
+  function applyWoodTextures() {
+    try {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const boardSize = Math.round(512 * dpr);
+      const blockSize = Math.round(384 * dpr);
+      const boardURL = generateWoodTexture(boardSize, 4242, { ringDensity: 9.5, grainAngleDeg: 8 });
+      const blockURL = generateWoodTexture(blockSize, 7321, { ringDensity: 12, grainAngleDeg: 14 });
+      const root = document.documentElement.style;
+      root.setProperty('--wood-tex-url-board', `url("${boardURL}")`);
+      root.setProperty('--wood-tex-url-block', `url("${blockURL}")`);
+      root.setProperty('--wood-tex-scale', `${Math.round(boardSize / 1.6)}px ${Math.round(boardSize / 1.6)}px`);
+    } catch (e) { /* fail silently */ }
+  }
+
   // Responsive fit: adjust cell size so layout fits within viewport without page scroll
   function fitToViewport() {
     const layoutEl = document.querySelector('.layout');
@@ -954,5 +1013,7 @@
   renderBoard();
   generateTray();
   fitToViewport();
+  // Generate wood textures in idle time to avoid blocking interaction
+  (window.requestIdleCallback || function (cb) { return setTimeout(cb, 0); })(() => applyWoodTextures());
   setStatus('Drag a piece onto a board cell, or click a piece then move over a cell to preview and click to place.');
 })();
