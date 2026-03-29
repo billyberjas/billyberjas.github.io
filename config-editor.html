@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vistacositas Config Editor</title>
+  <style>
+    :root {
+      --bg: #0d0d0d;
+      --surface: #1a1a1a;
+      --surface2: #222;
+      --border: #2e2e2e;
+      --border-hover: #444;
+      --text: #e0e0e0;
+      --muted: #777;
+      --accent: #4fc3f7;
+      --accent-hover: #81d4fa;
+      --danger: #ef5350;
+      --success: #66bb6a;
+      --high: #FF5252;
+      --medium: #FFD740;
+      --low: #69F0AE;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+      padding-bottom: 72px;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 20;
+    }
+    .logo { font-size: 17px; font-weight: 700; color: var(--accent); letter-spacing: -0.3px; }
+    .mode-toggle { display: flex; background: var(--surface2); border-radius: 8px; padding: 3px; gap: 3px; }
+    .mode-btn {
+      padding: 5px 18px; border-radius: 6px; border: none; cursor: pointer;
+      font-size: 13px; font-weight: 500; transition: all .15s;
+      background: transparent; color: var(--muted);
+    }
+    .mode-btn.active { background: var(--accent); color: #000; }
+
+    /* ── Layout ── */
+    .container { max-width: 860px; margin: 0 auto; padding: 24px; }
+
+    /* ── Controls ── */
+    .controls-bar {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .filename { font-size: 13px; color: var(--muted); }
+
+    /* ── Config panels ── */
+    .config-panel {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 18px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 14px;
+    }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* ── URL display box ── */
+    .url-box {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+      padding: 8px 12px;
+    }
+    .url-box code { font-size: 12px; color: var(--accent); flex: 1; word-break: break-all; font-family: 'SF Mono', 'Fira Code', monospace; }
+    .url-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: 8px; border: none; cursor: pointer;
+      font-size: 13px; font-weight: 500; transition: all .15s; white-space: nowrap;
+    }
+    .btn:disabled { opacity: .35; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: #000; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-ghost:hover:not(:disabled) { border-color: var(--border-hover); background: var(--surface2); }
+    .btn-danger-ghost { background: transparent; color: var(--danger); border: 1px solid transparent; }
+    .btn-danger-ghost:hover { border-color: var(--danger); }
+    .btn-save { background: var(--success); color: #000; padding: 9px 28px; font-size: 15px; font-weight: 600; }
+    .btn-save:hover:not(:disabled) { background: #81c784; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn-copy { padding: 4px 10px; font-size: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: var(--muted); }
+    .btn-copy:hover { color: var(--text); }
+
+    /* ── Settings accordion ── */
+    .accordion {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      overflow: hidden; margin-bottom: 20px;
+    }
+    .accordion-trigger {
+      width: 100%; padding: 13px 16px; background: none; border: none; color: var(--text);
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between; text-align: left;
+    }
+    .accordion-trigger:hover { background: var(--surface2); }
+    .accordion-body { display: none; padding: 16px; border-top: 1px solid var(--border); gap: 16px; flex-direction: column; }
+    .accordion-body.open { display: flex; }
+
+    /* ── Section header ── */
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .section-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); }
+    .count-badge { background: var(--surface2); color: var(--muted); font-size: 12px; padding: 1px 8px; border-radius: 10px; margin-left: 8px; }
+
+    /* ── Item cards ── */
+    .items-list { display: flex; flex-direction: column; gap: 10px; }
+    .item-card { border-radius: 12px; border: 1px solid var(--border); overflow: hidden; transition: border-color .15s; }
+    .item-card:hover { border-color: var(--border-hover); }
+    .item-card.disabled { opacity: .4; }
+    .item-card.disabled:hover { border-color: var(--border); }
+    .card-meta {
+      display: flex; align-items: center; gap: 8px; padding: 9px 12px;
+      background: rgba(0,0,0,.4); border-bottom: 1px solid var(--border);
+    }
+    .type-pill { padding: 2px 9px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
+    .pill-image    { background: #0d3460; color: #90caf9; }
+    .pill-reminder { background: #2d0d4e; color: #ce93d8; }
+    .pill-timer    { background: #3e1000; color: #ffab91; }
+    .meta-info { display: flex; gap: 10px; color: var(--muted); font-size: 12px; align-items: center; }
+    .swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid #444; flex-shrink: 0; }
+    .card-actions { margin-left: auto; display: flex; gap: 4px; }
+
+    /* ── Previews ── */
+    .preview-reminder { padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; }
+    .priority-tag { display: inline-block; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; width: fit-content; }
+    .preview-title { font-size: 24px; font-weight: 700; color: #fff; line-height: 1.2; }
+    .preview-body  { font-size: 15px; color: #bbb; }
+    .preview-image { position: relative; height: 150px; background: #111; overflow: hidden; }
+    .preview-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .img-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 13px; }
+    .img-caption { position: absolute; bottom: 0; left: 0; right: 0; padding: 10px 14px; background: linear-gradient(transparent, rgba(0,0,0,.75)); color: #fff; font-size: 13px; }
+    .preview-timer { padding: 18px 20px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .timer-label  { font-size: 14px; color: #bbb; }
+    .timer-clock  { font-size: 38px; font-weight: 700; font-family: 'SF Mono', 'Fira Code', monospace; color: #fff; }
+    .timer-target { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Empty / no-file ── */
+    .empty    { text-align: center; padding: 56px 24px; color: var(--muted); }
+    .empty-icon { font-size: 36px; margin-bottom: 12px; }
+    .no-file  { text-align: center; padding: 64px 24px; color: var(--muted); }
+
+    /* ── Forms ── */
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    label { font-size: 12px; font-weight: 500; color: var(--muted); }
+    .hint { font-size: 11px; color: #555; font-weight: 400; }
+
+    input[type=text], input[type=url], input[type=number], input[type=password],
+    input[type=datetime-local], textarea, select {
+      background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+      border-radius: 8px; padding: 8px 11px; font-size: 13px; outline: none;
+      font-family: inherit; transition: border-color .15s; width: 100%;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 72px; }
+    select option { background: var(--surface); }
+    .color-row { display: flex; gap: 8px; align-items: center; }
+    input[type=color] { width: 36px; height: 36px; padding: 2px 3px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border); background: var(--surface2); flex-shrink: 0; }
+    .color-row input[type=text] { flex: 1; }
+    .checkbox-label { display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text); font-size: 13px; }
+    input[type=checkbox] { width: 15px; height: 15px; cursor: pointer; accent-color: var(--accent); }
+    .small-hint { font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .small-hint a { color: var(--accent); }
+
+    /* ── Emoji picker ── */
+    .emoji-trigger {
+      background: none; border: none; cursor: pointer; font-size: 15px;
+      padding: 0 4px; opacity: .6; transition: opacity .15s; line-height: 1;
+    }
+    .emoji-trigger:hover { opacity: 1; }
+    .label-row { display: flex; align-items: center; gap: 6px; }
+    .emoji-popup {
+      display: none; position: fixed; z-index: 200;
+      background: var(--surface); border: 1px solid var(--border-hover);
+      border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,.6);
+      width: 320px; overflow: hidden;
+    }
+    .emoji-popup.open { display: block; }
+    .emoji-tabs { display: flex; overflow-x: auto; border-bottom: 1px solid var(--border); padding: 4px 6px; gap: 2px; scrollbar-width: none; }
+    .emoji-tabs::-webkit-scrollbar { display: none; }
+    .emoji-tab { background: none; border: none; cursor: pointer; font-size: 18px; padding: 5px 7px; border-radius: 6px; opacity: .5; transition: all .1s; flex-shrink: 0; }
+    .emoji-tab:hover { opacity: 1; background: var(--surface2); }
+    .emoji-tab.active { opacity: 1; background: var(--surface2); }
+    .emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; padding: 8px; max-height: 220px; overflow-y: auto; }
+    .emoji-btn { background: none; border: none; cursor: pointer; font-size: 20px; padding: 5px; border-radius: 6px; text-align: center; transition: background .1s; line-height: 1; }
+    .emoji-btn:hover { background: var(--surface2); }
+
+    /* ── Modal ── */
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+    .overlay.open { display: flex; }
+    .modal { background: var(--surface); border-radius: 16px; border: 1px solid var(--border); width: 100%; max-width: 520px; max-height: 92vh; overflow-y: auto; display: flex; flex-direction: column; }
+    .modal-sm { max-width: 340px; }
+    .modal-head { padding: 18px 20px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .modal-head h2 { font-size: 15px; font-weight: 600; }
+    .btn-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; padding: 2px 4px; }
+    .btn-close:hover { color: var(--text); }
+    .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; flex: 1; }
+    .modal-foot { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+    .type-picker { display: flex; flex-direction: column; gap: 8px; }
+    .type-option { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface2); cursor: pointer; transition: all .15s; }
+    .type-option:hover { border-color: var(--accent); background: #1a2a33; }
+    .type-option-icon  { font-size: 22px; }
+    .type-option-label { font-size: 14px; font-weight: 600; }
+    .type-option-desc  { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+    /* ── Save bar ── */
+    .save-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: center; gap: 16px; z-index: 20; }
+    .status-msg { font-size: 13px; padding: 6px 12px; border-radius: 6px; }
+    .status-success { background: rgba(102,187,106,.12); color: var(--success); }
+    .status-error   { background: rgba(239,83,80,.12);  color: var(--danger); }
+    .status-info    { background: rgba(79,195,247,.12); color: var(--accent); }
+    .unsaved-badge { font-size: 13px; color: #ffb300; background: rgba(255,179,0,.12); padding: 6px 12px; border-radius: 6px; display: none; }
+    .unsaved-badge.visible { display: inline-block; }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="logo">✦ Vistacositas</span>
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="btn-debug"      onclick="setMode('debug')">Debug</button>
+    <button class="mode-btn"        id="btn-gist"       onclick="setMode('gist')">GitHub Gist</button>
+    <button class="mode-btn"        id="btn-s3"         onclick="setMode('s3')">S3</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Debug controls -->
+  <div class="controls-bar" id="debug-controls">
+    <button class="btn btn-primary" onclick="loadLocalFile()">📂 Open JSON file</button>
+    <span class="filename" id="debug-filename">No file selected</span>
+  </div>
+
+  <!-- Gist controls -->
+  <div id="gist-controls" style="display:none">
+    <div class="config-panel">
+      <div class="section-label">GitHub Gist</div>
+      <div class="two-col">
+        <div class="form-group">
+          <label>Gist ID</label>
+          <input type="text" id="gist-id" placeholder="e.g. a1b2c3d4e5f6…" oninput="saveGistPrefs()">
+        </div>
+        <div class="form-group">
+          <label>Filename</label>
+          <input type="text" id="gist-filename" placeholder="visualizer-config.json" oninput="saveGistPrefs()">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Personal Access Token <span class="hint">— needs <code>gist</code> scope · kept in memory only</span></label>
+        <input type="password" id="gist-pat" placeholder="github_pat_…" autocomplete="new-password">
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="loadGist()">📥 Load from Gist</button>
+        <span class="small-hint">
+          No gist yet?
+          <a href="https://gist.github.com" target="_blank">Create one ↗</a> with a file named <code>visualizer-config.json</code>.
+          Then generate a PAT at
+          <a href="https://github.com/settings/tokens/new?scopes=gist" target="_blank">github.com/settings/tokens ↗</a>
+          with the <code>gist</code> scope.
+        </span>
+      </div>
+      <!-- Raw URL (shown after load) -->
+      <div id="gist-url-row" style="display:none">
+        <label style="margin-bottom:6px;display:block">App config URL — paste this into <code>AppConstants.kt</code></label>
+        <div class="url-box">
+          <code id="gist-raw-url"></code>
+          <button class="btn-copy" onclick="copyUrl()">Copy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S3 controls -->
+  <div id="s3-controls" style="display:none">
+    <div class="config-panel">
+      <div class="section-label">Amazon S3</div>
+      <div class="two-col">
+        <div class="form-group"><label>Bucket</label><input type="text" id="s3-bucket" placeholder="my-bucket"></div>
+        <div class="form-group"><label>Region</label><input type="text" id="s3-region" placeholder="eu-west-1"></div>
+        <div class="form-group"><label>Access Key ID</label><input type="text" id="s3-key-id" placeholder="AKIA…" autocomplete="off"></div>
+        <div class="form-group"><label>Secret Access Key</label><input type="password" id="s3-secret" placeholder="••••••••" autocomplete="new-password"></div>
+        <div class="form-group" style="grid-column:span 2"><label>File Key</label><input type="text" id="s3-file-key" placeholder="visualizer-config.json"></div>
+      </div>
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="loadS3()">📥 Load from S3</button>
+        <span class="small-hint">Credentials kept in memory only. Bucket must have CORS enabled for PUT/GET. <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/enabling-cors-examples.html" target="_blank">CORS setup ↗</a></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- No file loaded -->
+  <div id="no-file" class="no-file">
+    <div class="empty-icon">📄</div>
+    <p>Open a JSON file to start editing</p>
+  </div>
+
+  <!-- Main content -->
+  <div id="content" style="display:none">
+
+    <!-- Settings -->
+    <div class="accordion">
+      <button class="accordion-trigger" onclick="toggleAccordion()">
+        <span>⚙ Global Settings</span>
+        <span id="acc-arrow">▼</span>
+      </button>
+      <div class="accordion-body" id="acc-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Default Duration (seconds)</label>
+            <input type="number" id="s-duration" min="1" max="3600" oninput="collectSettings()">
+          </div>
+          <div class="form-group">
+            <label>Background Color</label>
+            <div class="color-row">
+              <input type="color" id="s-bg-picker" oninput="syncPicker('s-bg-picker','s-bg-text')">
+              <input type="text"  id="s-bg-text"   oninput="syncText('s-bg-text','s-bg-picker')" placeholder="#000000">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Items -->
+    <div class="section-header">
+      <div>
+        <span class="section-label">Items</span>
+        <span class="count-badge" id="count">0</span>
+      </div>
+      <button class="btn btn-primary" onclick="openTypePicker()">+ Add Item</button>
+    </div>
+    <div id="items-list" class="items-list"></div>
+
+  </div>
+</div>
+
+<!-- Save bar -->
+<div class="save-bar">
+  <span id="status-msg"></span>
+  <span id="unsaved-badge" class="unsaved-badge">● Unsaved changes</span>
+  <button class="btn btn-save" id="save-btn" disabled onclick="save()">💾 Save</button>
+</div>
+
+<!-- Type picker modal -->
+<div class="overlay" id="type-modal">
+  <div class="modal modal-sm">
+    <div class="modal-head">
+      <h2>Add Item</h2>
+      <button class="btn-close" onclick="closeTypePicker()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="type-picker">
+        <div class="type-option" onclick="openItemModal('reminder')">
+          <span class="type-option-icon">💬</span>
+          <div><div class="type-option-label">Reminder</div><div class="type-option-desc">Title, body text and priority level</div></div>
+        </div>
+        <div class="type-option" onclick="openItemModal('image')">
+          <span class="type-option-icon">🖼</span>
+          <div><div class="type-option-label">Image</div><div class="type-option-desc">Full-screen photo with optional caption</div></div>
+        </div>
+        <div class="type-option" onclick="openItemModal('timer')">
+          <span class="type-option-icon">⏱</span>
+          <div><div class="type-option-label">Timer</div><div class="type-option-desc">Countdown to a target date and time</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Item add/edit modal -->
+<div class="overlay" id="item-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="item-modal-title">Add Item</h2>
+      <button class="btn-close" onclick="closeItemModal()">✕</button>
+    </div>
+    <div class="modal-body" id="item-modal-body"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeItemModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitItem()">Save Item</button>
+    </div>
+  </div>
+</div>
+
+<!-- Emoji picker popup -->
+<div id="emoji-popup" class="emoji-popup">
+  <div class="emoji-tabs" id="emoji-tabs"></div>
+  <div class="emoji-grid" id="emoji-grid"></div>
+</div>
+
+<script src="https://sdk.amazonaws.com/js/aws-sdk-2.1691.0.min.js"></script>
+<script>
+// ─── Saved credentials ────────────────────────────────────────────────────────
+const SAVED_GIST_ID       = 'd9278244742ad8f57ee548fbcfbb1a08';
+const SAVED_GIST_FILENAME = 'visualizer-config.json';
+const SAVED_GIST_PAT      = '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';
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let config     = null;
+let mode       = 'gist';
+let fileHandle = null;
+let editIdx    = null;
+let editType   = null;
+let dirty      = false;
+
+// ─── Mode ─────────────────────────────────────────────────────────────────────
+function setMode(m) {
+  mode = m; config = null; fileHandle = null;
+  ['debug','gist','s3'].forEach(id => {
+    document.getElementById('btn-' + id).classList.toggle('active', id === m);
+    document.getElementById(id + '-controls').style.display = id === m ? (m === 'debug' ? 'flex' : 'block') : 'none';
+  });
+  if (m === 'gist') loadGistPrefs();
+  renderAll();
+}
+
+// ─── Debug ────────────────────────────────────────────────────────────────────
+async function loadLocalFile() {
+  if (!window.showOpenFilePicker) {
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = '.json';
+    input.onchange = async () => {
+      config = JSON.parse(await input.files[0].text());
+      document.getElementById('debug-filename').textContent = input.files[0].name + ' (save = download)';
+      renderAll(); status('Loaded: ' + input.files[0].name, 'success');
+    };
+    input.click(); return;
+  }
+  try {
+    [fileHandle] = await window.showOpenFilePicker({ types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }] });
+    const file = await fileHandle.getFile();
+    config = JSON.parse(await file.text());
+    document.getElementById('debug-filename').textContent = file.name;
+    renderAll(); status('Loaded: ' + file.name, 'success');
+  } catch (e) { if (e.name !== 'AbortError') status('Error: ' + e.message, 'error'); }
+}
+
+async function saveLocal() {
+  const json = JSON.stringify(buildConfig(), null, 2);
+  if (fileHandle) {
+    const w = await fileHandle.createWritable();
+    await w.write(json); await w.close();
+    clearDirty(); status('Saved ✓', 'success');
+  } else {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+    a.download = 'visualizer-config.json'; a.click();
+    status('Downloaded — replace the original file manually', 'info');
+  }
+}
+
+// ─── GitHub Gist ──────────────────────────────────────────────────────────────
+function gistHeaders() {
+  const pat = document.getElementById('gist-pat').value.trim();
+  const h = { 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+  if (pat) h['Authorization'] = 'Bearer ' + pat;
+  return h;
+}
+
+function gistFilename() {
+  return document.getElementById('gist-filename').value.trim() || 'visualizer-config.json';
+}
+
+async function loadGist() {
+  const id = document.getElementById('gist-id').value.trim();
+  if (!id) { status('Enter a Gist ID', 'error'); return; }
+  status('Loading from Gist…', 'info');
+  try {
+    const res  = await fetch(`https://api.github.com/gists/${id}`, { headers: gistHeaders() });
+    if (!res.ok) throw new Error(`GitHub API: ${res.status} ${res.statusText}`);
+    const data = await res.json();
+    const fn   = gistFilename();
+    const file = data.files[fn];
+    if (!file) throw new Error(`File "${fn}" not found in gist. Files: ${Object.keys(data.files).join(', ')}`);
+
+    config = JSON.parse(file.content);
+    const rawUrl = `https://gist.githubusercontent.com/${data.owner.login}/${id}/raw/${fn}`;
+    document.getElementById('gist-raw-url').textContent = rawUrl;
+    document.getElementById('gist-url-row').style.display = 'block';
+    renderAll(); status('Loaded from Gist ✓', 'success');
+  } catch (e) { status('Error: ' + e.message, 'error'); }
+}
+
+async function saveGist() {
+  const id  = document.getElementById('gist-id').value.trim();
+  const pat = document.getElementById('gist-pat').value.trim();
+  if (!id)  { status('Enter a Gist ID', 'error'); return; }
+  if (!pat) { status('A Personal Access Token is required to save', 'error'); return; }
+  status('Saving to Gist…', 'info');
+  try {
+    const body = { files: { [gistFilename()]: { content: JSON.stringify(buildConfig(), null, 2) } } };
+    const res  = await fetch(`https://api.github.com/gists/${id}`, {
+      method: 'PATCH',
+      headers: { ...gistHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(`GitHub API: ${res.status} ${res.statusText}`);
+    clearDirty(); status('Saved to Gist ✓', 'success');
+  } catch (e) { status('Error: ' + e.message, 'error'); }
+}
+
+function saveGistPrefs() {
+  localStorage.setItem('gist-id',       document.getElementById('gist-id').value);
+  localStorage.setItem('gist-filename', document.getElementById('gist-filename').value);
+}
+function loadGistPrefs() {
+  document.getElementById('gist-id').value       = SAVED_GIST_ID;
+  document.getElementById('gist-filename').value = SAVED_GIST_FILENAME;
+  document.getElementById('gist-pat').value      = SAVED_GIST_PAT;
+}
+
+function copyUrl() {
+  navigator.clipboard.writeText(document.getElementById('gist-raw-url').textContent)
+    .then(() => status('URL copied to clipboard', 'success'));
+}
+
+// ─── S3 ───────────────────────────────────────────────────────────────────────
+function s3Client() {
+  AWS.config.update({
+    accessKeyId:     document.getElementById('s3-key-id').value,
+    secretAccessKey: document.getElementById('s3-secret').value,
+    region:          document.getElementById('s3-region').value
+  });
+  return new AWS.S3();
+}
+
+async function loadS3() {
+  const bucket = document.getElementById('s3-bucket').value.trim();
+  const key    = document.getElementById('s3-file-key').value.trim();
+  if (!bucket || !key) { status('Fill in Bucket and File Key', 'error'); return; }
+  status('Loading from S3…', 'info');
+  try {
+    const data = await s3Client().getObject({ Bucket: bucket, Key: key }).promise();
+    config = JSON.parse(data.Body.toString());
+    renderAll(); status('Loaded from S3 ✓', 'success');
+  } catch (e) { status('S3 error: ' + e.message, 'error'); }
+}
+
+async function saveS3() {
+  const bucket = document.getElementById('s3-bucket').value.trim();
+  const key    = document.getElementById('s3-file-key').value.trim();
+  status('Saving to S3…', 'info');
+  try {
+    await s3Client().putObject({
+      Bucket: bucket, Key: key,
+      Body: JSON.stringify(buildConfig(), null, 2),
+      ContentType: 'application/json'
+    }).promise();
+    clearDirty(); status('Saved to S3 ✓', 'success');
+  } catch (e) { status('S3 error: ' + e.message, 'error'); }
+}
+
+// ─── Dirty tracking ───────────────────────────────────────────────────────────
+function markDirty() {
+  dirty = true;
+  document.getElementById('unsaved-badge').classList.add('visible');
+}
+function clearDirty() {
+  dirty = false;
+  document.getElementById('unsaved-badge').classList.remove('visible');
+}
+
+// ─── Save dispatcher ──────────────────────────────────────────────────────────
+async function save() {
+  collectSettings();
+  if (mode === 'debug') await saveLocal();
+  else if (mode === 'gist') await saveGist();
+  else await saveS3();
+}
+
+function buildConfig() {
+  return { schemaVersion: config.schemaVersion || 1, settings: config.settings, items: config.items };
+}
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+function populateSettings() {
+  const s = config.settings || {};
+  document.getElementById('s-duration').value = s.defaultDurationSeconds ?? 15;
+  const bg = s.backgroundColor || '#000000';
+  document.getElementById('s-bg-text').value   = bg;
+  document.getElementById('s-bg-picker').value = bg;
+}
+
+function collectSettings() {
+  config.settings = {
+    defaultDurationSeconds: parseInt(document.getElementById('s-duration').value) || 15,
+    backgroundColor: document.getElementById('s-bg-text').value || '#000000'
+  };
+  if (config) markDirty();
+}
+
+function toggleAccordion() {
+  const body = document.getElementById('acc-body');
+  body.classList.toggle('open');
+  document.getElementById('acc-arrow').textContent = body.classList.contains('open') ? '▲' : '▼';
+}
+
+function syncPicker(pickerId, textId) { document.getElementById(textId).value = document.getElementById(pickerId).value; collectSettings(); }
+function syncText(textId, pickerId)   { const v = document.getElementById(textId).value; if (/^#[0-9A-Fa-f]{6}$/.test(v)) document.getElementById(pickerId).value = v; collectSettings(); }
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+function renderAll() {
+  const loaded = config !== null;
+  document.getElementById('no-file').style.display  = loaded ? 'none'  : 'block';
+  document.getElementById('content').style.display  = loaded ? 'block' : 'none';
+  document.getElementById('save-btn').disabled      = !loaded;
+  if (loaded) { populateSettings(); renderItems(); }
+}
+
+function renderItems() {
+  const list  = document.getElementById('items-list');
+  const items = config.items || [];
+  document.getElementById('count').textContent = items.length;
+  if (!items.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><p>No items yet. Click "Add Item" to get started.</p></div>`;
+    return;
+  }
+  list.innerHTML = items.map((item, i) => cardHtml(item, i)).join('');
+}
+
+function cardHtml(item, i) {
+  const bg  = item.backgroundColor || config.settings?.backgroundColor || '#000000';
+  const dur = item.durationSeconds ? item.durationSeconds + 's' : (config.settings?.defaultDurationSeconds ?? 15) + 's (default)';
+  const pillClass = { image:'pill-image', reminder:'pill-reminder', timer:'pill-timer' }[item.type] || 'pill-reminder';
+  const isDisabled = !!item.disabled;
+  return `
+    <div class="item-card${isDisabled ? ' disabled' : ''}">
+      <div class="card-meta">
+        <span class="type-pill ${pillClass}">${item.type}</span>
+        <span class="meta-info">
+          <span>⏱ ${dur}</span>
+          <span>· ${h(item.id)}</span>
+          <span class="swatch" style="background:${h(bg)}" title="${h(bg)}"></span>
+          ${isDisabled ? '<span style="color:var(--muted)">· disabled</span>' : ''}
+        </span>
+        <div class="card-actions">
+          <button class="btn btn-ghost btn-sm" onclick="move(${i},-1)">↑</button>
+          <button class="btn btn-ghost btn-sm" onclick="move(${i},1)">↓</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleDisabled(${i})" title="${isDisabled ? 'Enable' : 'Disable'}">${isDisabled ? '✓ Enable' : '⊘ Disable'}</button>
+          <button class="btn btn-ghost btn-sm" onclick="openItemModal(null,${i})">✏ Edit</button>
+          <button class="btn btn-danger-ghost btn-sm" onclick="del(${i})">🗑</button>
+        </div>
+      </div>
+      <div style="background:${h(bg)}">${previewHtml(item)}</div>
+    </div>`;
+}
+
+function previewHtml(item) {
+  if (item.type === 'reminder') {
+    const colors = { high:'#FF5252', medium:'#FFD740', low:'#69F0AE' };
+    const p = item.priority || 'medium';
+    return `<div class="preview-reminder">
+      <span class="priority-tag" style="background:${colors[p]||colors.medium};color:#000">${p.toUpperCase()}</span>
+      <div class="preview-title">${h(item.title||'')}</div>
+      ${item.body ? `<div class="preview-body">${h(item.body)}</div>` : ''}
+    </div>`;
+  }
+  if (item.type === 'image') {
+    return `<div class="preview-image">
+      ${item.url
+        ? `<img src="${ha(item.url)}" alt="" onerror="this.parentElement.innerHTML='<div class=\\'img-placeholder\\'>⚠ Could not load image</div>'">`
+        : '<div class="img-placeholder">No URL set</div>'}
+      ${item.caption ? `<div class="img-caption">${h(item.caption)}</div>` : ''}
+      ${item.visualEffect && item.visualEffect !== 'none' ? `<div style="position:absolute;top:6px;right:8px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;padding:2px 8px;border-radius:4px">✨ ${h(item.visualEffect)}</div>` : ''}
+    </div>`;
+  }
+  if (item.type === 'timer') {
+    const rem = remaining(item.targetDatetime);
+    const fc  = item.flashColor || '#FF5252';
+    return `<div class="preview-timer">
+      <div class="timer-label">${h(item.label||'')}</div>
+      <div class="timer-clock" style="${rem===null?'color:'+fc:''}">
+        ${rem === null ? '+' + elapsed(item.targetDatetime) : rem}
+      </div>
+      <div class="timer-target">${h(item.targetDatetime||'')} · local time</div>
+    </div>`;
+  }
+  return '';
+}
+
+function remaining(dt) { if (!dt) return null; const d = new Date(dt)-Date.now(); return d<=0?null:fmt(d); }
+function elapsed(dt)   { if (!dt) return '00:00:00'; return fmt(Math.max(0,Date.now()-new Date(dt))); }
+function fmt(ms)       { const s=Math.floor(ms/1000); return `${pad(Math.floor(s/3600))}:${pad(Math.floor(s%3600/60))}:${pad(s%60)}`; }
+function pad(n)        { return String(n).padStart(2,'0'); }
+
+// ─── CRUD ─────────────────────────────────────────────────────────────────────
+function move(i, dir) {
+  const j = i + dir;
+  if (j < 0 || j >= config.items.length) return;
+  [config.items[i], config.items[j]] = [config.items[j], config.items[i]];
+  markDirty(); renderItems();
+}
+function del(i) { if (!confirm('Delete this item?')) return; config.items.splice(i,1); markDirty(); renderItems(); }
+function toggleDisabled(i) { config.items[i].disabled = !config.items[i].disabled; markDirty(); renderItems(); }
+
+// ─── Modals ───────────────────────────────────────────────────────────────────
+function openTypePicker()  { document.getElementById('type-modal').classList.add('open'); }
+function closeTypePicker() { document.getElementById('type-modal').classList.remove('open'); }
+
+function openItemModal(type, idx) {
+  closeTypePicker();
+  editIdx  = idx ?? null;
+  editType = type ?? config.items[idx].type;
+  const item = idx != null ? config.items[idx] : null;
+  document.getElementById('item-modal-title').textContent = item ? 'Edit ' + cap(editType) : 'Add ' + cap(editType);
+  document.getElementById('item-modal-body').innerHTML = formHtml(editType, item);
+  document.getElementById('item-modal').classList.add('open');
+}
+function closeItemModal() { document.getElementById('item-modal').classList.remove('open'); editIdx=null; editType=null; }
+
+function formHtml(type, item) {
+  const v  = item || {};
+  const bg = v.backgroundColor || '';
+  const defBg = config.settings?.backgroundColor || '#000000';
+  const common = `
+    <div class="form-row">
+      <div class="form-group">
+        <label>ID</label>
+        <input type="text" id="f-id" value="${ha(v.id||genId(type))}" placeholder="unique-id">
+      </div>
+      <div class="form-group">
+        <label>Duration (seconds) <span class="hint">— leave empty for default</span></label>
+        <input type="number" id="f-dur" value="${v.durationSeconds||''}" min="1" placeholder="${config.settings?.defaultDurationSeconds??15}">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Background Color <span class="hint">— leave empty to inherit global setting</span></label>
+      <div class="color-row">
+        <input type="color" id="f-bg-p" value="${ha(bg||defBg)}" oninput="document.getElementById('f-bg').value=this.value">
+        <input type="text"  id="f-bg"   value="${ha(bg)}" placeholder="e.g. #1A237E" oninput="if(/^#[0-9A-Fa-f]{6}$/.test(this.value))document.getElementById('f-bg-p').value=this.value">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="f-disabled" ${v.disabled ? 'checked' : ''}> Disabled <span class="hint">— item will be skipped in the app</span>
+      </label>
+    </div>`;
+
+  if (type === 'reminder') {
+    const p = v.priority||'medium';
+    return common + `
+      <div class="form-group">
+        <div class="label-row"><label>Title</label><button type="button" class="emoji-trigger" onclick="openEmojiPicker('f-title',this)" title="Insert emoji">😊</button></div>
+        <input type="text" id="f-title" value="${ha(v.title||'')}" placeholder="Reminder title">
+      </div>
+      <div class="form-group">
+        <div class="label-row"><label>Body <span class="hint">— optional</span></label><button type="button" class="emoji-trigger" onclick="openEmojiPicker('f-body',this)" title="Insert emoji">😊</button></div>
+        <textarea id="f-body" placeholder="Additional details…">${h(v.body||'')}</textarea>
+      </div>
+      <div class="form-group"><label>Priority</label>
+        <select id="f-priority">
+          <option value="high"   ${p==='high'  ?'selected':''}>High</option>
+          <option value="medium" ${p==='medium'?'selected':''}>Medium</option>
+          <option value="low"    ${p==='low'   ?'selected':''}>Low</option>
+        </select>
+      </div>`;
+  }
+  if (type === 'image') {
+    const ve = v.visualEffect || 'none';
+    return common + `
+      <div class="form-group"><label>Image URL</label><input type="url" id="f-url" value="${ha(v.url||'')}" placeholder="https://…"></div>
+      <div class="form-group"><label>Caption <span class="hint">— optional</span></label><input type="text" id="f-caption" value="${ha(v.caption||'')}" placeholder="Caption text"></div>
+      <div class="form-group"><label>Visual Effect</label>
+        <select id="f-visual-effect">
+          <option value="none"     ${ve==='none'    ?'selected':''}>None</option>
+          <option value="kenburns" ${ve==='kenburns'?'selected':''}>Ken Burns</option>
+        </select>
+      </div>`;
+  }
+  if (type === 'timer') {
+    const fc  = v.flashColor||'#FF5252';
+    const foe = v.flashOnExpiry !== false;
+    return common + `
+      <div class="form-group"><label>Label</label><input type="text" id="f-label" value="${ha(v.label||'')}" placeholder="Sprint ends in"></div>
+      <div class="form-group">
+        <label>Target Date & Time <span class="hint">— local time</span></label>
+        <input type="datetime-local" id="f-dt" value="${ha(v.targetDatetime||'')}" step="1">
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Flash Color</label>
+          <div class="color-row">
+            <input type="color" id="f-fc-p" value="${ha(fc)}" oninput="document.getElementById('f-fc').value=this.value">
+            <input type="text"  id="f-fc"   value="${ha(fc)}" oninput="if(/^#[0-9A-Fa-f]{6}$/.test(this.value))document.getElementById('f-fc-p').value=this.value">
+          </div>
+        </div>
+        <div class="form-group"><label>&nbsp;</label>
+          <label class="checkbox-label" style="padding-top:8px">
+            <input type="checkbox" id="f-foe" ${foe?'checked':''}> Flash on expiry
+          </label>
+        </div>
+      </div>`;
+  }
+  return '';
+}
+
+function submitItem() {
+  const id  = document.getElementById('f-id').value.trim();
+  const dur = document.getElementById('f-dur').value;
+  const bg  = document.getElementById('f-bg').value.trim();
+  if (!id) { alert('ID is required'); return; }
+
+  let item = { type: editType, id };
+  if (dur) item.durationSeconds = parseInt(dur);
+  if (bg)  item.backgroundColor = bg;
+  item.disabled = document.getElementById('f-disabled').checked;
+
+  if (editType === 'reminder') {
+    const title = document.getElementById('f-title').value.trim();
+    if (!title) { alert('Title is required'); return; }
+    item.title = title;
+    const body = document.getElementById('f-body').value.trim();
+    if (body) item.body = body;
+    item.priority = document.getElementById('f-priority').value;
+  }
+  if (editType === 'image') {
+    const url = document.getElementById('f-url').value.trim();
+    if (!url) { alert('URL is required'); return; }
+    item.url = url;
+    const cap = document.getElementById('f-caption').value.trim();
+    if (cap) item.caption = cap;
+    item.visualEffect = document.getElementById('f-visual-effect').value;
+  }
+  if (editType === 'timer') {
+    const label = document.getElementById('f-label').value.trim();
+    if (!label) { alert('Label is required'); return; }
+    item.label = label;
+    let dt = document.getElementById('f-dt').value;
+    if (!dt) { alert('Target date/time is required'); return; }
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(dt)) dt += ':00';
+    item.targetDatetime = dt;
+    item.flashColor    = document.getElementById('f-fc').value || '#FF5252';
+    item.flashOnExpiry = document.getElementById('f-foe').checked;
+  }
+
+  if (editIdx === null) config.items.push(item);
+  else                  config.items[editIdx] = item;
+  markDirty(); closeItemModal(); renderItems();
+}
+
+// ─── Emoji picker ─────────────────────────────────────────────────────────────
+const EMOJI_CATS = [
+  { icon:'😀', emojis:'😀 😃 😄 😁 😆 😅 🤣 😂 🙂 😊 😇 🥰 😍 🤩 😘 😋 😜 🤪 😎 🤓 🧐 😏 😒 🙄 😬 😌 😔 😪 😴 😷 🤒 🤕 😵 🤯 🥳 🤠 😕 😟 😮 😲 😳 🥺 😦 😧 😨 😢 😭 😱 😤 😡 🤬 😈 👿 💀 💩 🤡 👻' },
+  { icon:'👍', emojis:'👋 🤚 ✋ 👌 ✌️ 🤞 🤟 🤘 🤙 👈 👉 👆 👇 ☝️ 👍 👎 ✊ 👊 👏 🙌 🤝 🙏 💪 ✍️ 🫶 ❤️‍🔥' },
+  { icon:'❤️', emojis:'❤️ 🧡 💛 💚 💙 💜 🖤 🤍 🤎 💔 💕 💞 💓 💗 💖 💘 💝 💟 ❣️ 💯 ✅ ❌ ⭐ 🌟 ✨ 💫 🔥 💥 ❄️ 🌈 💤 💬 🗨️' },
+  { icon:'🐶', emojis:'🐶 🐱 🐭 🐹 🐰 🦊 🐻 🐼 🐨 🐯 🦁 🐮 🐷 🐸 🐵 🐔 🐧 🐦 🦆 🦅 🦉 🦇 🐺 🐗 🐴 🦄 🐝 🐛 🦋 🐌 🐞 🐜 🌸 🌺 🌻 🌹 🌷 🍀 🌿 🍁 🌊 🌙 ☀️ ⛅ ⚡ 🌈 ❄️' },
+  { icon:'🍕', emojis:'🍕 🍔 🌮 🌯 🍟 🍿 🍣 🍜 🍝 🍛 🍲 🥗 🥘 🍱 🍙 🍚 🥡 🍦 🍩 🍪 🎂 🍰 🧁 🍫 🍬 🍭 🍺 🍻 🥂 🍷 ☕ 🧋 🥤 🧃 🍵 🥐 🥖 🧇 🥞 🥓 🍳 🥚 🧀' },
+  { icon:'⚽', emojis:'⚽ 🏀 🏈 ⚾ 🎾 🏐 🎱 🏓 🏸 🥊 🥋 🎯 🎳 🏹 🎣 🤿 🎽 🛹 🛷 ⛸️ 🥌 🎿 🏆 🥇 🥈 🥉 🏅 🎖️ 🎮 🕹️ 🎲 🎭 🎨 🎬 🎤 🎧 🎵 🎶 🎸 🎹 🥁 🎺 🎻' },
+  { icon:'✈️', emojis:'✈️ 🚗 🚕 🚙 🚌 🚎 🏎️ 🚓 🚑 🚒 🛻 🚚 🛵 🚲 🛴 🚂 🚢 🛳️ ⛵ 🚁 🛸 🚀 🏠 🏡 🏢 🏥 🏦 🏨 🏪 🏫 🗼 🗽 ⛪ 🏰 🗺️ 🌍 🌎 🌏 🌐' },
+  { icon:'💡', emojis:'💡 🔦 📱 💻 🖥️ ⌨️ 🖱️ 💾 💿 📷 📸 🎥 📞 ☎️ 📺 📻 🔋 🔌 🔒 🔓 🔑 🗝️ 🔨 🪓 🔧 🔩 ⚙️ 🧰 💊 🩺 🩹 🏥 💉 🧪 🔬 🔭 📚 📖 📝 ✏️ 📌 📍 📎 ✂️ 🗓️ 📅 🕐 ⏰ ⌛ ⏳ 💰 💳' },
+];
+
+let emojiTargetId  = null;
+let emojiActiveCat = 0;
+
+function openEmojiPicker(targetId, triggerEl) {
+  emojiTargetId = targetId;
+  const popup = document.getElementById('emoji-popup');
+
+  // Build tabs once
+  const tabs = document.getElementById('emoji-tabs');
+  if (!tabs.children.length) {
+    EMOJI_CATS.forEach((cat, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'emoji-tab' + (i === 0 ? ' active' : '');
+      btn.textContent = cat.icon;
+      btn.onclick = () => selectEmojiCat(i);
+      tabs.appendChild(btn);
+    });
+  }
+
+  selectEmojiCat(emojiActiveCat);
+
+  // Position to the right of the trigger button, vertically centered on it
+  const rect = triggerEl.getBoundingClientRect();
+  const popupWidth = 320;
+  const popupHeight = 280;
+  let left = rect.right + window.scrollX + 8;
+  let top  = rect.top  + window.scrollY - popupHeight / 2;
+  // Clamp so it never goes off-screen
+  if (left + popupWidth > window.innerWidth)  left = rect.left + window.scrollX - popupWidth - 8;
+  if (top < window.scrollY)                   top  = window.scrollY + 8;
+  if (top + popupHeight > window.scrollY + window.innerHeight) top = window.scrollY + window.innerHeight - popupHeight - 8;
+  popup.style.top  = top  + 'px';
+  popup.style.left = left + 'px';
+  popup.classList.add('open');
+}
+
+function selectEmojiCat(idx) {
+  emojiActiveCat = idx;
+  document.querySelectorAll('.emoji-tab').forEach((t,i) => t.classList.toggle('active', i === idx));
+  const grid = document.getElementById('emoji-grid');
+  grid.innerHTML = EMOJI_CATS[idx].emojis.split(' ').map(e =>
+    `<button class="emoji-btn" onclick="insertEmoji('${e}')">${e}</button>`
+  ).join('');
+}
+
+function insertEmoji(emoji) {
+  const el = document.getElementById(emojiTargetId);
+  if (!el) return;
+  const start = el.selectionStart ?? el.value.length;
+  const end   = el.selectionEnd   ?? el.value.length;
+  el.value = el.value.slice(0, start) + emoji + el.value.slice(end);
+  el.selectionStart = el.selectionEnd = start + emoji.length;
+  el.focus();
+}
+
+function closeEmojiPicker() { document.getElementById('emoji-popup').classList.remove('open'); }
+
+document.addEventListener('click', e => {
+  const popup   = document.getElementById('emoji-popup');
+  if (!popup.classList.contains('open')) return;
+  if (!popup.contains(e.target) && !e.target.classList.contains('emoji-trigger')) closeEmojiPicker();
+});
+
+// ─── Utils ────────────────────────────────────────────────────────────────────
+function genId(type) { return `${({reminder:'rem',image:'img',timer:'tmr'}[type]||'item')}-${String(Date.now()).slice(-4)}`; }
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+function h(s)   { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function ha(s)  { return String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+let _st = null;
+function status(msg, type) {
+  const el = document.getElementById('status-msg');
+  el.textContent = msg; el.className = 'status-msg status-' + type;
+  clearTimeout(_st); _st = setTimeout(() => { el.textContent = ''; el.className = 'status-msg'; }, 5000);
+}
+
+document.getElementById('type-modal').addEventListener('click', e => { if (e.target===e.currentTarget) closeTypePicker(); });
+document.getElementById('item-modal').addEventListener('click', e => { if (e.target===e.currentTarget) closeItemModal(); });
+
+// Start in Gist mode and auto-load
+setMode('gist');
+loadGist();
+</script>
+</body>
+</html>
