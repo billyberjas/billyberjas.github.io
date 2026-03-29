@@ -125,14 +125,18 @@
     .card-meta {
       display: flex; align-items: center; gap: 8px; padding: 9px 12px;
       background: rgba(0,0,0,.4); border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
     }
-    .type-pill { padding: 2px 9px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
+    .type-pill { padding: 2px 9px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; flex-shrink: 0; }
     .pill-image    { background: #0d3460; color: #90caf9; }
     .pill-reminder { background: #2d0d4e; color: #ce93d8; }
     .pill-timer    { background: #3e1000; color: #ffab91; }
-    .meta-info { display: flex; gap: 10px; color: var(--muted); font-size: 12px; align-items: center; }
+    .meta-info { display: flex; gap: 10px; color: var(--muted); font-size: 12px; align-items: center; flex-wrap: wrap; }
     .swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid #444; flex-shrink: 0; }
-    .card-actions { margin-left: auto; display: flex; gap: 4px; }
+    .card-actions { margin-left: auto; display: flex; gap: 4px; flex-wrap: wrap; }
+    @media (max-width: 500px) {
+      .card-actions { margin-left: 0; width: 100%; justify-content: flex-end; padding-top: 4px; }
+    }
 
     /* ── Previews ── */
     .preview-reminder { padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; }
