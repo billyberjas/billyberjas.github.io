@@ -261,8 +261,8 @@
         </div>
       </div>
       <div class="form-group">
-        <label>Personal Access Token <span class="hint">— needs <code>gist</code> scope · kept in memory only</span></label>
-        <input type="password" id="gist-pat" placeholder="github_pat_…" autocomplete="new-password">
+        <label>Personal Access Token <span class="hint">— needs <code>gist</code> scope · saved in browser localStorage</span></label>
+        <input type="password" id="gist-pat" placeholder="github_pat_…" autocomplete="new-password" oninput="saveGistPrefs()">
       </div>
       <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
         <button class="btn btn-primary" onclick="loadGist()">📥 Load from Gist</button>
@@ -407,7 +407,7 @@
 // ─── Saved credentials ────────────────────────────────────────────────────────
 const SAVED_GIST_ID       = 'd9278244742ad8f57ee548fbcfbb1a08';
 const SAVED_GIST_FILENAME = 'visualizer-config.json';
-const SAVED_GIST_PAT      = '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';
+const SAVED_GIST_PAT      = '';
 
 // ─── State ────────────────────────────────────────────────────────────────────
 let config     = null;
@@ -516,11 +516,12 @@ async function saveGist() {
 function saveGistPrefs() {
   localStorage.setItem('gist-id',       document.getElementById('gist-id').value);
   localStorage.setItem('gist-filename', document.getElementById('gist-filename').value);
+  localStorage.setItem('gist-pat',      document.getElementById('gist-pat').value);
 }
 function loadGistPrefs() {
-  document.getElementById('gist-id').value       = SAVED_GIST_ID;
-  document.getElementById('gist-filename').value = SAVED_GIST_FILENAME;
-  document.getElementById('gist-pat').value      = SAVED_GIST_PAT;
+  document.getElementById('gist-id').value       = localStorage.getItem('gist-id')       || SAVED_GIST_ID;
+  document.getElementById('gist-filename').value = localStorage.getItem('gist-filename') || SAVED_GIST_FILENAME;
+  document.getElementById('gist-pat').value      = localStorage.getItem('gist-pat')      || SAVED_GIST_PAT;
 }
 
 function copyUrl() {
